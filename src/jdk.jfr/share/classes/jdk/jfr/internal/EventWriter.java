@@ -329,11 +329,28 @@ public final class EventWriter {
 
     private void putUncheckedLong(long v) {
         int length = VARINT_LENGTHS[Long.numberOfLeadingZeros(v)];
-        for (int i = 0; i < length; i++) {
-            putUncheckedByte(((byte) ((v & 0x7F) | 0x80)));
-            v >>>= 7;
+        unsafe.putByte(currentPosition + length, (byte)(v >>> (length * 7)));
+        switch (length - 1) {
+            case 8:
+                unsafe.putByte(currentPosition + 8, (byte)((v >>> 56) | 0x80));
+            case 7:
+                unsafe.putByte(currentPosition + 7, (byte)((v >>> 49) | 0x80));
+            case 6:
+                unsafe.putByte(currentPosition + 6, (byte)((v >>> 42) | 0x80));
+            case 5:
+                unsafe.putByte(currentPosition + 5, (byte)((v >>> 35) | 0x80));
+            case 4:
+                unsafe.putByte(currentPosition + 4, (byte)((v >>> 28) | 0x80));
+            case 3:
+                unsafe.putByte(currentPosition + 3, (byte)((v >>> 21) | 0x80));
+            case 2:
+                unsafe.putByte(currentPosition + 2, (byte)((v >>> 14) | 0x80));
+            case 1:
+                unsafe.putByte(currentPosition + 1, (byte)((v >>> 7) | 0x80));
+            case 0:
+                unsafe.putByte(currentPosition, (byte)(v | 0x80));
         }
-        putUncheckedByte((byte) v);
+        currentPosition += length + 1;
     }
 
     private void putUncheckedByte(byte i) {
